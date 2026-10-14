@@ -87,6 +87,10 @@ gcc -std=c11 -O2 -o file_tracker.exe src/main.c src/tracker.c src/storage.c src/
 
 运行后，根据控制台菜单输入编号即可使用对应功能。详细步骤见 [`docs/building.md`](docs/building.md) 与 [`docs/usage.md`](docs/usage.md)。
 
+## 下载
+
+前往 [Releases](https://github.com/sh1783079089/ft/releases) 下载最新版本的 `file_tracker.exe`。当前仅提供 Windows 可执行文件。
+
 ## 文档
 
 | 文档 | 内容 |
@@ -99,7 +103,11 @@ gcc -std=c11 -O2 -o file_tracker.exe src/main.c src/tracker.c src/storage.c src/
 
 ## 平台限制
 
-本项目**仅支持 Windows**。代码使用了 `<conio.h>`、`<direct.h>`、`<windows.h>` 等 Windows 专属 API，无法在 Linux / macOS 上直接编译运行。
+本项目**仅支持 Windows**。代码使用了 `<conio.h>`、`<direct.h>`、`<windows.h>` 等 Windows 专属 API，无法在 Linux / macOS 上直接编译运行。跨平台支持已列入 [`docs/roadmap.md`](docs/roadmap.md)。
+
+## 版本与路线图
+
+当前版本 **v0.1.0**。后续版本目标为测试、跨平台与 CLI，详见 [`docs/roadmap.md`](docs/roadmap.md)，变更记录见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 来源与贡献者
 

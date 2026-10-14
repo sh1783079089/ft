@@ -31,3 +31,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: file_tracker.exe
+          generate_release_notes: true

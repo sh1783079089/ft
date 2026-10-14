@@ -1,18 +1,18 @@
+#include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
-#include <conio.h>
 #include <sys/stat.h>
+#include <windows.h>
 
 #ifdef _WIN32
-    #define stat _stat
+#define stat _stat
 #endif
 
 #include "tracker.h"
 
-static Branch *create_branch(const char *name, Commit *head) {
-    Branch *branch = (Branch *) malloc(sizeof(Branch));
+static Branch* create_branch(const char* name, Commit* head) {
+    Branch* branch = (Branch*)malloc(sizeof(Branch));
     if (branch == NULL) {
         return NULL;
     }
@@ -24,7 +24,7 @@ static Branch *create_branch(const char *name, Commit *head) {
     return branch;
 }
 
-void tracker_init(Tracker *tracker) {
+void tracker_init(Tracker* tracker) {
     tracker->tracked_file[0] = '\0';
     tracker->working_dir[0] = '\0';
     tracker->repo_path[0] = '\0';
@@ -39,45 +39,44 @@ void tracker_init(Tracker *tracker) {
     tracker->checked_out = NULL;
 }
 
-void tracker_free(Tracker *tracker) {
-    //释放所有内存
-    Commit *commit = tracker->commit_tail;
-    BlobRef *blob_ref = tracker->blob_refs;
-    Branch *branch = tracker->branches;
-    Tag *tag = tracker->tags;
+void tracker_free(Tracker* tracker) {
+    // 释放所有内存
+    Commit* commit = tracker->commit_tail;
+    BlobRef* blob_ref = tracker->blob_refs;
+    Branch* branch = tracker->branches;
+    Tag* tag = tracker->tags;
 
     while (commit != NULL) {
-        Commit *next = commit->next;
+        Commit* next = commit->next;
         free(commit);
         commit = next;
     }
 
     while (blob_ref != NULL) {
-        BlobRef *next = blob_ref->next;
+        BlobRef* next = blob_ref->next;
         free(blob_ref);
         blob_ref = next;
     }
 
     while (branch != NULL) {
-        Branch *next = branch->next;
+        Branch* next = branch->next;
         free(branch);
         branch = next;
     }
 
     while (tag != NULL) {
-        Tag *next = tag->next;
+        Tag* next = tag->next;
         free(tag);
         tag = next;
     }
 }
 
-void save_exit(Tracker *tracker) {
-    int i=0;
+void save_exit(Tracker* tracker) {
+    int i = 0;
     system("cls");
     printf("状态保存和程序退出模块\n");
     printf("---------------------------------\n");
     if (tracker->repository_loaded == 1) {
-
         printf("正在保存数据，请稍后...\n");
         storage_save_tracker(tracker);
         system("cls");
@@ -92,13 +91,13 @@ void save_exit(Tracker *tracker) {
     exit(0);
 }
 
-void open_or_create_repository(Tracker *tracker) {
-    //初始化tracker
+void open_or_create_repository(Tracker* tracker) {
+    // 初始化tracker
     int i;
     char path[MAX_PATH_LEN];
     char tracked_file[MAX_PATH_LEN];
     char working_dir[MAX_PATH_LEN];
-    FILE *fp;
+    FILE* fp;
     int repo_path_len;
     size_t len;
     int c;
@@ -107,7 +106,8 @@ void open_or_create_repository(Tracker *tracker) {
     printf("仓库打开和程序初始化模块\n");
     printf("---------------------------------\n");
     if (tracker->repository_loaded == 1) {
-        printf("当前已选中文件“%s”，是否选择其他文件？\n", tracker->tracked_file);
+        printf("当前已选中文件“%s”，是否选择其他文件？\n",
+               tracker->tracked_file);
         printf("1--是\n");
         i = choice_check();
         if (i != 1) {
@@ -135,7 +135,8 @@ void open_or_create_repository(Tracker *tracker) {
     }
     printf("---------------------------------\n");
     if (path_analysis(path, tracked_file, working_dir) != 1) {
-        printf("错误：文件路径解析失败！请检查是否使用绝对路径！文件未被打开！\n");
+        printf(
+            "错误：文件路径解析失败！请检查是否使用绝对路径！文件未被打开！\n");
         system("pause");
         return;
     }
@@ -157,7 +158,9 @@ void open_or_create_repository(Tracker *tracker) {
     }
     strcpy(tracker->tracked_file, tracked_file);
     strcpy(tracker->working_dir, working_dir);
-    repo_path_len = snprintf(tracker->repo_path, REPO_PATH_LEN, "%s/.ft/repos/%s",tracker->working_dir, tracked_file);
+    repo_path_len =
+        snprintf(tracker->repo_path, REPO_PATH_LEN, "%s/.ft/repos/%s",
+                 tracker->working_dir, tracked_file);
     if (repo_path_len < 0 || repo_path_len >= REPO_PATH_LEN) {
         printf("错误：仓库路径过长。请缩短文件路径后重试。\n");
         tracker->tracked_file[0] = '\0';
@@ -169,7 +172,8 @@ void open_or_create_repository(Tracker *tracker) {
 
     if (storage_repository_exists(tracker)) {
         if (storage_load_tracker(tracker)) {
-            storage_ft_write_index(tracker->working_dir, tracker->tracked_file, path);
+            storage_ft_write_index(tracker->working_dir, tracker->tracked_file,
+                                   path);
             printf("已打开现有仓库\n");
             system("pause");
             return;
@@ -181,7 +185,8 @@ void open_or_create_repository(Tracker *tracker) {
         return;
     }
     if (storage_init_repository(tracker)) {
-        storage_ft_write_index(tracker->working_dir, tracker->tracked_file, path);
+        storage_ft_write_index(tracker->working_dir, tracker->tracked_file,
+                               path);
         printf("已新建工作仓库\n");
         system("pause");
         return;
@@ -193,13 +198,14 @@ void open_or_create_repository(Tracker *tracker) {
     system("pause");
 }
 
-static void do_commit(Tracker *tracker, const char *message,unsigned char *data, const long size, const char *hash) {
+static void do_commit(Tracker* tracker, const char* message,
+                      unsigned char* data, const long size, const char* hash) {
     char full_path[MAX_PATH_LEN];
-    Commit *commit;
-    BlobRef *blob_ref;
+    Commit* commit;
+    BlobRef* blob_ref;
 
-    snprintf(full_path, sizeof(full_path), "%s/%s",
-             tracker->working_dir, tracker->tracked_file);
+    snprintf(full_path, sizeof(full_path), "%s/%s", tracker->working_dir,
+             tracker->tracked_file);
 
     blob_ref = tracker->blob_refs;
     while (blob_ref != NULL) {
@@ -209,8 +215,11 @@ static void do_commit(Tracker *tracker, const char *message,unsigned char *data,
     if (blob_ref != NULL) {
         blob_ref->ref_count++;
     } else {
-        blob_ref = (BlobRef *)malloc(sizeof(BlobRef));
-        if (blob_ref == NULL) { free(data); return; }
+        blob_ref = (BlobRef*)malloc(sizeof(BlobRef));
+        if (blob_ref == NULL) {
+            free(data);
+            return;
+        }
         strncpy(blob_ref->hash, hash, HASH_LEN - 1);
         blob_ref->hash[HASH_LEN - 1] = '\0';
         blob_ref->ref_count = 1;
@@ -224,8 +233,11 @@ static void do_commit(Tracker *tracker, const char *message,unsigned char *data,
         tracker->blob_refs = blob_ref;
     }
 
-    commit = (Commit *)malloc(sizeof(Commit));
-    if (commit == NULL) { free(data); return; }
+    commit = (Commit*)malloc(sizeof(Commit));
+    if (commit == NULL) {
+        free(data);
+        return;
+    }
 
     commit->id = tracker->next_commit_id;
     tracker->next_commit_id++;
@@ -235,7 +247,9 @@ static void do_commit(Tracker *tracker, const char *message,unsigned char *data,
     commit->message[MAX_MESSAGE_LEN - 1] = '\0';
     strncpy(commit->hash, hash, HASH_LEN - 1);
     commit->hash[HASH_LEN - 1] = '\0';
-    strncpy(commit->branch, tracker->current_branch ? tracker->current_branch->name : "main", BRANCH_NAME_LEN - 1);
+    strncpy(commit->branch,
+            tracker->current_branch ? tracker->current_branch->name : "main",
+            BRANCH_NAME_LEN - 1);
     commit->branch[BRANCH_NAME_LEN - 1] = '\0';
 
     commit->prev = tracker->current_branch->head;
@@ -247,21 +261,19 @@ static void do_commit(Tracker *tracker, const char *message,unsigned char *data,
     if (tracker->total_commit_head != NULL)
         tracker->total_commit_head->next = commit;
     tracker->total_commit_head = commit;
-    if (tracker->commit_tail == NULL)
-        tracker->commit_tail = commit;
+    if (tracker->commit_tail == NULL) tracker->commit_tail = commit;
 
     storage_save_tracker(tracker);
     printf("提交成功，版本 ID：%d\n", commit->id);
     free(data);
 }
 
-void commit_version(Tracker *tracker) {
-    unsigned char *data = NULL;
+void commit_version(Tracker* tracker) {
+    unsigned char* data = NULL;
     long size = 0;
     char hash[HASH_LEN];
     char full_path[MAX_PATH_LEN];
     char message[MAX_MESSAGE_LEN] = "";
-
 
     system("cls");
     printf("文件提交模块\n");
@@ -271,14 +283,14 @@ void commit_version(Tracker *tracker) {
         system("pause");
         return;
     }
-    if (tracker->checked_out!=tracker->current_branch->head) {
+    if (tracker->checked_out != tracker->current_branch->head) {
         printf("警告：当前未处于提交头，如需在此版本上提交，请先新建分支！\n");
         system("pause");
         return;
     }
 
-    snprintf(full_path, sizeof(full_path), "%s/%s",
-             tracker->working_dir, tracker->tracked_file);
+    snprintf(full_path, sizeof(full_path), "%s/%s", tracker->working_dir,
+             tracker->tracked_file);
 
     if (!storage_read_file(full_path, &data, &size)) {
         printf("无法读取文件：%s\n", full_path);
@@ -304,7 +316,7 @@ void commit_version(Tracker *tracker) {
     if (tracker->current_branch->head != NULL &&
         strcmp(tracker->current_branch->head->hash, hash) == 0) {
         printf("文件内容与上次提交未变化\n");
-        }
+    }
 
     printf("请输入提交说明：");
     if (fgets(message, MAX_MESSAGE_LEN, stdin) != NULL) {
@@ -321,9 +333,9 @@ void commit_version(Tracker *tracker) {
     }
 
     printf("---------------------------------\n");
-    printf("拟提交ID:%d\n",tracker->next_commit_id);
-    printf("提交文件哈希：%s\n",static_short_hash(hash));
-    printf("提交说明：%s\n",message);
+    printf("拟提交ID:%d\n", tracker->next_commit_id);
+    printf("提交文件哈希：%s\n", static_short_hash(hash));
+    printf("提交说明：%s\n", message);
     printf("---------------------------------\n");
     printf("是否确认提交？\n");
     printf("1-是  0-取消\n");
@@ -337,12 +349,12 @@ void commit_version(Tracker *tracker) {
     system("pause");
 }
 
-void show_history(const Tracker *tracker) {
+void show_history(const Tracker* tracker) {
     system("cls");
-    const Commit *commit;
-    const Commit *arr[MAX_COMMITS];
+    const Commit* commit;
+    const Commit* arr[MAX_COMMITS];
     int count = 0, i, choice;
-    char mark[15]="";
+    char mark[15] = "";
 
     printf("提交记录查看模块\n");
     printf("---------------------------------\n");
@@ -389,18 +401,24 @@ void show_history(const Tracker *tracker) {
     for (i = count - 1; i >= 0; i--) {
         commit = arr[i];
         char time_buf[20];
-        struct tm *tm_info = localtime(&commit->timestamp);
+        struct tm* tm_info = localtime(&commit->timestamp);
         strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M", tm_info);
-        if (commit==tracker->checked_out) strcpy(mark,"（当前） ");
-        else strcpy(mark,"");
-        printf("版本 %d [%s] %s %s%s\n  %s\n",commit->id, commit->branch,time_buf, static_short_hash(commit->hash),mark, commit->message);
-        if (choice == 1 && i > 0 && strcmp(arr[i]->branch, arr[i-1]->branch) != 0) printf("  ---- 分支 [%s] 从此处分出 ----\n", arr[i-1]->branch);
+        if (commit == tracker->checked_out)
+            strcpy(mark, "（当前） ");
+        else
+            strcpy(mark, "");
+        printf("版本 %d [%s] %s %s%s\n  %s\n", commit->id, commit->branch,
+               time_buf, static_short_hash(commit->hash), mark,
+               commit->message);
+        if (choice == 1 && i > 0 &&
+            strcmp(arr[i]->branch, arr[i - 1]->branch) != 0)
+            printf("  ---- 分支 [%s] 从此处分出 ----\n", arr[i - 1]->branch);
     }
     printf("---------------------------------\n");
     system("pause");
 }
 
-void delete_repository(Tracker *tracker) {
+void delete_repository(Tracker* tracker) {
     system("cls");
     printf("仓库清空模块\n");
     printf("---------------------------------\n");
@@ -432,13 +450,13 @@ void delete_repository(Tracker *tracker) {
     system("pause");
 }
 
-void restore_version(Tracker *tracker) {
+void restore_version(Tracker* tracker) {
     int target_id;
-    Commit *c;
+    Commit* c;
     char full_path[MAX_PATH_LEN];
     char time_buf[20];
-    struct tm *tm_info;
-    unsigned char *cur_data = NULL;
+    struct tm* tm_info;
+    unsigned char* cur_data = NULL;
     long cur_size = 0;
     char cur_hash[HASH_LEN];
 
@@ -450,7 +468,8 @@ void restore_version(Tracker *tracker) {
         system("pause");
         return;
     }
-    if (tracker->current_branch == NULL||tracker->current_branch->head == NULL) {
+    if (tracker->current_branch == NULL ||
+        tracker->current_branch->head == NULL) {
         printf("当前分支下没有可恢复的历史版本\n");
         system("pause");
         return;
@@ -494,7 +513,8 @@ void restore_version(Tracker *tracker) {
         return;
     }
 
-    snprintf(full_path, sizeof(full_path), "%s/%s",tracker->working_dir, tracker->tracked_file);
+    snprintf(full_path, sizeof(full_path), "%s/%s", tracker->working_dir,
+             tracker->tracked_file);
 
     if (tracker->checked_out != NULL) {
         if (storage_read_file(full_path, &cur_data, &cur_size)) {
@@ -520,21 +540,21 @@ void restore_version(Tracker *tracker) {
         system("pause");
         return;
     }
-    tracker->checked_out = (Commit *)c;
+    tracker->checked_out = (Commit*)c;
     storage_save_head(tracker);
 
     printf("版本 %d 已恢复到 %s\n", target_id, full_path);
     system("pause");
 }
 
-void watch_files(Tracker *tracker) {
+void watch_files(Tracker* tracker) {
     int elapsed;
     int changed = 0;
     struct stat st;
     char full_path[MAX_PATH_LEN];
     char last_hash[HASH_LEN] = "";
     char new_hash[HASH_LEN];
-    unsigned char *data = NULL;
+    unsigned char* data = NULL;
     long size = 0;
     time_t last_mtime = 0;
 
@@ -546,14 +566,14 @@ void watch_files(Tracker *tracker) {
         system("pause");
         return;
     }
-    if (tracker->checked_out!=tracker->current_branch->head) {
+    if (tracker->checked_out != tracker->current_branch->head) {
         printf("警告：当前未处于提交头，如需在此版本上提交，请先新建分支！\n");
         system("pause");
         return;
     }
 
-    snprintf(full_path, sizeof(full_path), "%s/%s",
-             tracker->working_dir, tracker->tracked_file);
+    snprintf(full_path, sizeof(full_path), "%s/%s", tracker->working_dir,
+             tracker->tracked_file);
 
     if (storage_read_file(full_path, &data, &size)) {
         hash_data(data, size, last_hash);
@@ -564,7 +584,7 @@ void watch_files(Tracker *tracker) {
     }
 
     printf("监控文件：%s\n", full_path);
-    printf("每 %d 秒检查一次修改时间，变化时自动提交\n",MONITOR_TIMES/1000);
+    printf("每 %d 秒检查一次修改时间，变化时自动提交\n", MONITOR_TIMES / 1000);
     printf("按 0 退出监控\n");
     printf("---------------------------------\n");
 
@@ -592,13 +612,13 @@ void watch_files(Tracker *tracker) {
             data = NULL;
         }
     }
-    exit_monitor:
+exit_monitor:
     if (changed == 1) printf("---------------------------------\n");
     printf("已退出监控进程\n");
     system("pause");
 }
 
-void manage_branches(Tracker *tracker) {
+void manage_branches(Tracker* tracker) {
     int choice;
     char name[BRANCH_NAME_LEN];
     Branch *b, *prev;
@@ -660,7 +680,7 @@ void manage_branches(Tracker *tracker) {
                 continue;
             }
 
-            b = (Branch *) malloc(sizeof(Branch));
+            b = (Branch*)malloc(sizeof(Branch));
             if (!b) {
                 printf("错误：内存申请失败！\n");
                 system("pause");
@@ -670,7 +690,7 @@ void manage_branches(Tracker *tracker) {
             b->name[BRANCH_NAME_LEN - 1] = '\0';
             b->head = tracker->checked_out;
             b->next = NULL;
-            Branch *last = tracker->branches;
+            Branch* last = tracker->branches;
             while (last->next != NULL) last = last->next;
             last->next = b;
             storage_save_branches(tracker);
@@ -719,7 +739,7 @@ void manage_branches(Tracker *tracker) {
 
                     if (tracker->checked_out != NULL) {
                         char full_path[MAX_PATH_LEN];
-                        unsigned char *data = NULL;
+                        unsigned char* data = NULL;
                         long size = 0;
                         char hash[HASH_LEN];
 
@@ -730,7 +750,8 @@ void manage_branches(Tracker *tracker) {
                             free(data);
                             if (strcmp(hash, tracker->checked_out->hash) != 0) {
                                 printf("警告：当前文件有未提交的修改\n");
-                                printf("切换到分支 '%s' 将丢弃这些修改\n", b->name);
+                                printf("切换到分支 '%s' 将丢弃这些修改\n",
+                                       b->name);
                                 printf("是否继续？ 1-是  0-否\n");
                                 do_switch = (choice_check() == 1);
                             }
@@ -741,13 +762,16 @@ void manage_branches(Tracker *tracker) {
                         char full_path[MAX_PATH_LEN];
                         snprintf(full_path, sizeof(full_path), "%s/%s",
                                  tracker->working_dir, tracker->tracked_file);
-                        if (storage_restore_blob(tracker, b->head->hash, full_path)) {
+                        if (storage_restore_blob(tracker, b->head->hash,
+                                                 full_path)) {
                             tracker->current_branch = b;
                             tracker->checked_out = b->head;
                             printf("已切换到分支 '%s'（文件已恢复到 ID%d）\n",
                                    b->name, b->head->id);
                         } else {
-                            printf("未能切换到分支 '%s'（警告：文件恢复失败）\n", b->name);
+                            printf(
+                                "未能切换到分支 '%s'（警告：文件恢复失败）\n",
+                                b->name);
                         }
                     } else {
                         printf("已取消切换\n");
@@ -785,11 +809,15 @@ void manage_branches(Tracker *tracker) {
             found = 0;
             while (b) {
                 if (i == idx) {
-                    if (strcmp(b->name, "main") == 0) printf("不能删除 main 分支\n");
-                    else if (b == tracker->current_branch) printf("不能删除当前分支\n");
+                    if (strcmp(b->name, "main") == 0)
+                        printf("不能删除 main 分支\n");
+                    else if (b == tracker->current_branch)
+                        printf("不能删除当前分支\n");
                     else {
-                        if (prev) prev->next = b->next;
-                        else tracker->branches = b->next;
+                        if (prev)
+                            prev->next = b->next;
+                        else
+                            tracker->branches = b->next;
                         free(b);
                         storage_save_branches(tracker);
                         printf("分支已删除\n");
@@ -809,12 +837,12 @@ void manage_branches(Tracker *tracker) {
     }
 }
 
-void manage_tags(Tracker *tracker) {
+void manage_tags(Tracker* tracker) {
     int choice;
     char name[TAG_NAME_LEN];
     int commit_id, i, idx, found, total;
     Tag *t, *prev, *tail;
-    Commit *c;
+    Commit* c;
 
     system("cls");
     printf("标签管理模块\n");
@@ -832,8 +860,13 @@ void manage_tags(Tracker *tracker) {
         t = tracker->tags;
         i = 1;
         while (t) {
-            if (t->commit==NULL) printf("  %d. %s -> 对应版本丢失，将在下一次SL时移除！\n", i++, t->name);
-            else printf("  %d. %s -> 版本 %d [%s] %s\n", i++, t->name, t->commit->id,static_short_hash(t->commit->hash), t->commit->message);
+            if (t->commit == NULL)
+                printf("  %d. %s -> 对应版本丢失，将在下一次SL时移除！\n", i++,
+                       t->name);
+            else
+                printf("  %d. %s -> 版本 %d [%s] %s\n", i++, t->name,
+                       t->commit->id, static_short_hash(t->commit->hash),
+                       t->commit->message);
             t = t->next;
         }
         printf("---------------------------------\n");
@@ -888,7 +921,7 @@ void manage_tags(Tracker *tracker) {
                 continue;
             }
 
-            t = (Tag *)malloc(sizeof(Tag));
+            t = (Tag*)malloc(sizeof(Tag));
             if (!t) {
                 printf("内存分配失败\n");
                 system("pause");
@@ -938,8 +971,10 @@ void manage_tags(Tracker *tracker) {
             i = 1;
             while (t) {
                 if (i == idx) {
-                    if (prev) prev->next = t->next;
-                    else tracker->tags = t->next;
+                    if (prev)
+                        prev->next = t->next;
+                    else
+                        tracker->tags = t->next;
                     free(t);
                     printf("标签已删除\n");
                     storage_save_tags(tracker);
@@ -957,12 +992,12 @@ void manage_tags(Tracker *tracker) {
     }
 }
 
-void show_graph(const Tracker *tracker) {
-    const Commit *arr[MAX_COMMITS];
+void show_graph(const Tracker* tracker) {
+    const Commit* arr[MAX_COMMITS];
     int count = 0;
-    const Branch *b;
+    const Branch* b;
     int lane_count = 0;
-    char mark[15]="";
+    char mark[15] = "";
 
     system("cls");
     printf("提交图展示模块\n");
@@ -979,11 +1014,14 @@ void show_graph(const Tracker *tracker) {
     }
 
     b = tracker->branches;
-    while (b) { lane_count++; b = b->next; }
+    while (b) {
+        lane_count++;
+        b = b->next;
+    }
     if (lane_count > 8) lane_count = 8;
 
     /* 收集全部提交（旧→新） */
-    const Commit *c = tracker->commit_tail;
+    const Commit* c = tracker->commit_tail;
     while (c && count < MAX_COMMITS) {
         arr[count++] = c;
         c = c->next;
@@ -1019,8 +1057,7 @@ void show_graph(const Tracker *tracker) {
             if (strcmp(c->branch, b->name) == 0) {
                 found = 1;
                 printf(" *  ");
-                for (int j = col + 1; j < lane_count; j++)
-                    printf(" |  ");
+                for (int j = col + 1; j < lane_count; j++) printf(" |  ");
                 break;
             }
             printf(" |  ");
@@ -1033,20 +1070,21 @@ void show_graph(const Tracker *tracker) {
 
         /* 时间戳 */
         char time_buf[20];
-        struct tm *tm_info = localtime(&c->timestamp);
+        struct tm* tm_info = localtime(&c->timestamp);
         strftime(time_buf, sizeof(time_buf), "%m-%d %H:%M", tm_info);
         printf(" [%s]", time_buf);
 
         /* 分叉标记：和全局下一笔（更旧）不同分支 */
-        if (i > 0 && strcmp(c->branch, arr[i-1]->branch) != 0)
-            printf(" <");
+        if (i > 0 && strcmp(c->branch, arr[i - 1]->branch) != 0) printf(" <");
 
-        if (c==tracker->checked_out) strcpy(mark," <-当前");
-        else strcpy(mark,"");
+        if (c == tracker->checked_out)
+            strcpy(mark, " <-当前");
+        else
+            strcpy(mark, "");
         printf(" 版本 %d: %s%s", c->id, c->message, mark);
 
         /* 标签 */
-        const Tag *t = tracker->tags;
+        const Tag* t = tracker->tags;
         while (t) {
             if (t->commit == c) {
                 printf("  (%s)", t->name);

@@ -1,6 +1,6 @@
 # 文件变更监控与历史版本恢复工具
 
-![CI](https://github.com/sh1783079089/ft/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/sh1783079089/ft/actions/workflows/ci.yml/badge.svg)](https://github.com/sh1783079089/ft/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/sh1783079089/ft?style=flat-square)](https://github.com/sh1783079089/ft/releases) [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue?style=flat-square)](LICENSE) ![C](https://img.shields.io/badge/language-C-00599C?style=flat-square&logo=c&logoColor=white) ![CMake](https://img.shields.io/badge/build-CMake-064F8C?style=flat-square&logo=cmake&logoColor=white) ![Windows](https://img.shields.io/badge/platform-Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
 
 本项目是一个基于 C 语言的本地文件版本管理工具。程序采用控制台菜单交互方式，用户通过输入编号完成初始化、保存版本、查看历史、恢复版本、文件监控、分支管理、标签管理和提交图查看等操作。
 

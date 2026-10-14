@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (Windows / MinGW UCRT64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+
+      - name: Build with gcc
+        shell: msys2 {0}
+        run: gcc -std=c11 -O2 -o file_tracker.exe src/main.c src/tracker.c src/storage.c src/lib.c
+
+      - name: Build with CMake
+        shell: msys2 {0}
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -B build
+          cmake --build build
+
+      - name: Compiler warnings (informational)
+        shell: msys2 {0}
+        continue-on-error: true
+        run: gcc -std=c11 -Wall -Wextra -fsyntax-only src/main.c src/tracker.c src/storage.c src/lib.c
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: file_tracker-windows
+          path: file_tracker.exe
+          if-no-files-found: error
+
+  format:
+    name: Format check (clang-format)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install clang-format
+        run: pip install clang-format==18.1.8
+
+      - name: Check formatting
+        run: clang-format --dry-run --Werror src/main.c src/tracker.c src/storage.c src/lib.c src/tracker.h
